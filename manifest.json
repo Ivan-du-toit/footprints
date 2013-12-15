@@ -1,0 +1,27 @@
+{
+	"manifest_version": 2,
+
+	"name": "Footprints",
+	"description": "Saves pages you visit. 
+	Footprint designed by Paulo Volkova from the Noun Project",
+	"version": "0.1",
+
+	"background": {
+		"scripts": ["background.js"]
+	},
+	"browser_action": {
+		"default_icon": "icon.png",
+		"default_title": "Footprints"
+	},
+	"content_scripts": [
+		{
+			"matches": ["http://*/*", "https://*/*"],
+			"js": ["content.js"]
+		}
+	],
+	"permissions": [
+		"tabs",
+		"storage",
+		"http://localhost/"
+	]
+}
