@@ -9,19 +9,25 @@ import (
     "io/ioutil"
     "log"
     "net/http"
+    "time"
 )
 
 type Page struct {
-    Id      int
-    Title   string `db:"title"`
-    Url     string
-    Content string
+    Id         int       `db:"id"`
+    Title      string    `db:"title"`
+    Url        string    `db:"url"`
+    Content    string    `db:"content"`
+    UpdateTime time.Time `db:"updatetime"`
 }
 
 type Config struct {
     DBName     string
     DBUser     string
     DBPassword string
+}
+
+func (page Page) Validate() (bool) {
+    return page.Url != "" && page.Content != ""
 }
 
 func loadConfig() Config {
@@ -41,7 +47,7 @@ func loadConfig() Config {
 func initSwagger() {
     swaggerConfig := swagger.Config{
         WebServices:    restful.RegisteredWebServices(), // you control what services are visible
-        WebServicesUrl: "http://localhost:8080",
+        WebServicesUrl: "http://localhost:8888",
         ApiPath:        "/apidocs.json",
         // Optionally, specifiy where the UI is located
         SwaggerPath:     "/apidocs/",
@@ -63,13 +69,14 @@ func dbSetup(config Config) *sqlx.DB {
 
 func main() {
     config := loadConfig()
-    initSwagger()
 
     db := dbSetup(config)
 
     pageService := PageService{db}
     pageService.Register()
 
-    log.Printf("start listening on localhost:8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
+    initSwagger()
+
+    log.Printf("start listening on localhost:8888")
+    log.Fatal(http.ListenAndServe("192.168.1.102:8888", nil))
 }
