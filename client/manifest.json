@@ -23,5 +23,6 @@
 		"tabs",
 		"storage",
 		"http://localhost/"
-	]
+	],
+	"options_page": "options.html"
 }
