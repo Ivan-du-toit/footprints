@@ -1,6 +1,6 @@
 var DEBUG = true;
 var SERVER_URL = 'http://192.168.1.102:8888/';
-var BLACK_LIST = ['localhost', 'google', 'amazon'];
+var BLACK_LIST = ['localhost', 'google', 'amazon', 'nedbank', 'nedsecure', 'paypal'];
 
 //Check to see if URL is blacklisted.
 //This function should be improved to have a dynamically saved blacklist. Possibly pulled from the server.
