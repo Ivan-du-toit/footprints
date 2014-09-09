@@ -10,6 +10,8 @@ import (
     "log"
     "net/http"
     "time"
+    "io"
+    "os"
 )
 
 type Page struct {
@@ -26,6 +28,13 @@ type Config struct {
     DBPassword string
 }
 
+var (
+    Trace   *log.Logger
+    Info    *log.Logger
+    Warning *log.Logger
+    Error   *log.Logger
+)
+
 func (page Page) Validate() (bool) {
     return page.Url != "" && page.Content != ""
 }
@@ -34,12 +43,12 @@ func loadConfig() Config {
     var config Config
     configFile, err := ioutil.ReadFile("config.json")
     if err != nil {
-        log.Fatal("opening config file. ", err.Error())
+        Error.Fatal("opening config file. ", err.Error())
     }
 
     err = json.Unmarshal(configFile, &config)
     if err != nil {
-        log.Fatal("Error parsing config file. ", err.Error())
+        Error.Fatal("Error parsing config file. ", err.Error())
     }
     return config
 }
@@ -67,7 +76,19 @@ func dbSetup(config Config) *sqlx.DB {
     return db
 }
 
+func initLogs(traceHandle io.Writer, infoHandle io.Writer, warningHandle io.Writer, errorHandle io.Writer) {
+
+    Trace = log.New(traceHandle, "TRACE: ", log.Ldate|log.Ltime|log.Lshortfile)
+
+    Info = log.New(infoHandle, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+
+    Warning = log.New(warningHandle, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
+
+    Error = log.New(errorHandle, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+}
+
 func main() {
+    initLogs(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
     config := loadConfig()
 
     db := dbSetup(config)

@@ -3,7 +3,6 @@ package main
 import (
     "github.com/emicklei/go-restful"
     "github.com/jmoiron/sqlx"
-    "log"
     "net/http"
 )
 
@@ -39,7 +38,7 @@ func (ps PageService) GetPage(request *restful.Request, response *restful.Respon
     var page []Page
     err := ps.db.Select(&page, "SELECT * FROM pages WHERE id = $1", id)
     if err != nil {
-        log.Print("Error: ", err)
+        Error.Print(err)
         response.WriteErrorString(http.StatusInternalServerError, "While loading page " + id + " we encountered an error.")
     }
     if (len(page) == 0) {
@@ -53,7 +52,7 @@ func (ps PageService) AddPage(request *restful.Request, response *restful.Respon
     page := new(Page)
     request.ReadEntity(page)
     if (!page.Validate()) {
-        log.Print("Invalid page posted", page)
+        Error.Print("Invalid page posted", page)
         //TODO: Add beter information about what exactly was missing or wrong
         response.WriteErrorString(http.StatusBadRequest, "Invalid page data")
         return
@@ -65,13 +64,16 @@ func (ps PageService) AddPage(request *restful.Request, response *restful.Respon
         //Update should rather be moved to another table and insert the new record.
         //Not sure if this should be done in code or in the DB...
         page.Id = existingPage.Id
+        Trace.Print("Updating page", existingPage, page)
         _, err = ps.db.NamedExec("UPDATE pages SET content = :content WHERE id = :id", page)
+        Info.Print("Updated page:", page.Url)
     } else {
-        log.Print("Inserting new page: ", page)
+        Trace.Print("Inserting new page: ", page)
         _, err = ps.db.NamedExec("INSERT INTO pages (content, url) VALUES (:content, :url)", page)
+        Info.Print("Page inserted", page.Url);
     }
     if err != nil {
-        log.Print("Error: ", err)
+        Error.Print(err)
         response.WriteErrorString(http.StatusInternalServerError, "Failed to save page.")
     } else {
         response.WriteHeader(http.StatusCreated)
@@ -85,7 +87,7 @@ func (ps PageService) findPageByUrl(url string) (page Page) {
     var pages []Page
     err := ps.db.Select(&pages, "SELECT * FROM pages WHERE url = $1", url)
     if err != nil {
-        log.Print("Error: ", err)
+        Error.Print(err)
         return Page{}
     }
     if (len(pages) == 0) {
