@@ -11,12 +11,18 @@ type PageService struct {
     //pages map[string]Page
 }
 
+type PageList struct {
+    Pages []Page
+    Start int
+    Size int
+}
+
 func (page PageService) Register() {
     ws := new(restful.WebService)
     ws.
         Path("/pages").
         Consumes(restful.MIME_XML, restful.MIME_JSON).
-        Produces(restful.MIME_JSON, restful.MIME_XML)
+        Produces(restful.MIME_JSON)
 
     ws.Route(ws.GET("/{page-id}").To(page.GetPage).
         Doc("Get a page").
@@ -29,7 +35,6 @@ func (page PageService) Register() {
         Operation("AddPage").
         Reads(Page{}).
         Writes(Page{}))
-
     restful.Add(ws)
 }
 
@@ -58,19 +63,23 @@ func (ps PageService) AddPage(request *restful.Request, response *restful.Respon
         return
     }
     //If url exists update
-    existingPage := ps.findPageByUrl(page.Url)
-    var err error
+    existingPage, err := ps.findPageByUrl(page.Url)
+    if err != nil {
+        response.WriteErrorString(http.StatusInternalServerError, "Failed to save page.")
+        return
+    }
+
     if existingPage.Id > 0 {
         //Update should rather be moved to another table and insert the new record.
         //Not sure if this should be done in code or in the DB...
         page.Id = existingPage.Id
         Trace.Print("Updating page", existingPage, page)
-        _, err = ps.db.NamedExec("UPDATE pages SET content = :content WHERE id = :id", page)
+        _, err = ps.db.NamedExec("UPDATE pages SET content = :content, title = :title WHERE id = :id", page)
         Info.Print("Updated page:", page.Url)
     } else {
         Trace.Print("Inserting new page: ", page)
-        _, err = ps.db.NamedExec("INSERT INTO pages (content, url) VALUES (:content, :url)", page)
-        Info.Print("Page inserted", page.Url);
+        _, err = ps.db.NamedExec("INSERT INTO pages (content, url, title) VALUES (:content, :url, :title)", page)
+        Info.Print("Page inserted ", page.Title + " (" +  page.Url + ")");
     }
     if err != nil {
         Error.Print(err)
@@ -83,15 +92,15 @@ func (ps PageService) AddPage(request *restful.Request, response *restful.Respon
 }
 
 //Helper functions should be moved to a model class that handles all the persistance logic
-func (ps PageService) findPageByUrl(url string) (page Page) {
+func (ps PageService) findPageByUrl(url string) (page Page, error error) {
     var pages []Page
-    err := ps.db.Select(&pages, "SELECT * FROM pages WHERE url = $1", url)
+    err := ps.db.Select(&pages, "SELECT id, title, content, url FROM pages WHERE url = $1", url)
     if err != nil {
         Error.Print(err)
-        return Page{}
+        return Page{}, err;
     }
     if (len(pages) == 0) {
-        return Page{}
+        return Page{}, nil
     }
-    return pages[0]
+    return pages[0], nil
 }

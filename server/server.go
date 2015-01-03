@@ -87,17 +87,32 @@ func initLogs(traceHandle io.Writer, infoHandle io.Writer, warningHandle io.Writ
     Error = log.New(errorHandle, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
+// Global Filter
+func globalLogging(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+    Info.Printf("[global-filter (logger)] %s,%s\n", req.Request.Method, req.Request.URL)
+    chain.ProcessFilter(req, resp)
+}
+
 func main() {
     initLogs(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
     config := loadConfig()
 
     db := dbSetup(config)
 
+    restful.Filter(globalLogging)
+    restful.DefaultContainer.EnableContentEncoding(true)
+
+    restful.DefaultResponseContentType(restful.MIME_JSON)
+    restful.DefaultRequestContentType(restful.MIME_JSON)
+
     pageService := PageService{db}
     pageService.Register()
 
+    searchService := SearchService{db}
+    searchService.Register()
+
     initSwagger()
 
-    log.Printf("start listening on localhost:8888")
-    log.Fatal(http.ListenAndServe("192.168.1.102:8888", nil))
+    Info.Printf("start listening on localhost:8888")
+    Info.Fatal(http.ListenAndServe("192.168.1.102:8888", nil))
 }
