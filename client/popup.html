@@ -1,0 +1,23 @@
+<html ng-app="footprints" ng-csp>
+	<head>
+		<title>Search</title>
+		<link rel="stylesheet" href="readibility.theme.css">
+		<script src="angular.min.js"></script>
+		<script src="popup.js"></script>
+</head>
+	<body ng-controller="SearchCtrl">
+		<input type="text" id="query" ng-model="query" placeholder="Search" autofocus/>
+		<button id="search" ng-click="search();">Search</button>
+		<div>
+			<div>
+				{{error}}
+			</div>
+			<div ng-repeat="page in searchItems">
+				<div class="title"><a ng-href="{{page.Url}}">{{page.Title}}</a></div>
+				<div class="url"><a ng-href="{{page.Url}}">{{page.Url}}</a></div>
+				<div class="content">{{page.Content}}</div>
+				{{page}}
+			</div>
+		</div>
+	</body>
+</html>

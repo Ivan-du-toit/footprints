@@ -1,6 +1,11 @@
 var DEBUG = true;
-var SERVER_URL = 'http://192.168.1.102:8888/';
-var BLACK_LIST = ['localhost', 'google', 'amazon', 'nedbank', 'nedsecure', 'paypal'];
+var SERVER_URL  = 'http://192.168.1.102:8888/';
+chrome.storage.sync.get({
+		server: SERVER_URL
+	}, function(items) {
+		SERVER_URL = items.server;
+	});
+var BLACK_LIST = ['localhost', 'google', 'amazon'];
 
 //Check to see if URL is blacklisted.
 //This function should be improved to have a dynamically saved blacklist. Possibly pulled from the server.
@@ -20,7 +25,7 @@ function debugLog(message) {
 }
 
 chrome.tabs.onUpdated.addListener( function (tabId, changeInfo, tab) {
-
+	
 	if (changeInfo.status == 'complete') {
 		if (!shouldCaptureURL(tab.url)) {
 		//if (tab.url.indexOf('localhost') > -1 || tab.url.indexOf('.google.') > -1) {
@@ -28,7 +33,7 @@ chrome.tabs.onUpdated.addListener( function (tabId, changeInfo, tab) {
 			return;
 		}
 		chrome.tabs.sendRequest(tab.id, {method: 'getText'}, function(response) {
-			if(response.method=="getText"){
+			if(response != undefined && response.method=="getText") {
 				var data = {
 					"Content": response.data,
 					"Title":tab.title,
@@ -39,7 +44,12 @@ chrome.tabs.onUpdated.addListener( function (tabId, changeInfo, tab) {
 				xhr.onreadystatechange = function(){
 					if (xhr.readyState == 4 && ( xhr.status == 200 || xhr.status == 201)) {
 						console.log('Data sent: ' + xhr.responseText);
+						chrome.browserAction.setBadgeText({'text': "S"});
+						chrome.browserAction.setBadgeBackgroundColor({"color": "#0F0"});
 					} else if (xhr.readyState == 4) {
+						alert('Footprints: failed to contact server');
+						chrome.browserAction.setBadgeBackgroundColor({"color": "#F00"});
+						chrome.browserAction.setBadgeText({string: "F"});
 						console.log('Error: ' + xhr.responseText);
 					}
 				};
